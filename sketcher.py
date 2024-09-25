@@ -5,7 +5,8 @@ def sketcher(image_path):
     # Read image
     image = cv2.imread(image_path)
     if image is None:
-        print("Error: Unable to open image.")
+        print("Error: Image does not exist.")
+        return
 
     # Apply grey filter
     grey_img = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
