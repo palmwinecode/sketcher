@@ -1,7 +1,7 @@
 import cv2
 import os
 
-from tkinter import *
+import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 class App:
@@ -9,50 +9,64 @@ class App:
         # Create instance variable
         self.root = root
 
-        # Give root window a title
-        self.root.title("Sketcher")
-
         # Create frame for entry field and button
-        frame = ttk.Frame(self.root, padding=10)
-        frame.grid(column=0, row=0, sticky=(N, S, E, W))
+        frame = ttk.Frame(self.root)
+        frame.grid(column=0, row=0)
 
         # Configure rows and columns
         root.columnconfigure(0, weight=1)
         root.rowconfigure(0, weight=1)
 
-        # Path entry label
-        ttk.Label(frame, text="Enter image path").grid(column=1,row=1)
+        # Heading label
+        tk.Label(frame, text="Select image path", font=("Helvetica", 12, "bold"), pady=10).grid(column=0,row=0, columnspan=3, sticky=("NW"))
 
         # Path entry field
-        self.path = StringVar()
-        path_entry = ttk.Entry(frame, width=50, textvariable=self.path)
-        path_entry.grid(column=1, row=2)
+        self.image_path = tk.StringVar()
+        self.path_entry = ttk.Entry(frame, width=50, textvariable=self.image_path)
+        self.path_entry.grid(column=0, row=1, columnspan=3, sticky=("NSEW"))
 
         # Focus cursor in entry field
-        path_entry.focus()
+        self.path_entry.focus()
+        
+        # Path selection button
+        self.path_btn = ttk.Button(frame, text="Path", command=self.select_image_path)
+        self.path_btn.grid(column=3, row=1, sticky="NSWE")
 
-        #  Submit button
-        submit = ttk.Button(frame, text="Submit", command=self.get_image_path)
-        submit.grid(column=1, row=3)
+        # Submit button
+        submit = ttk.Button(frame, text="Sketch", command=self.get_image_path)
+        submit.grid(column=0, row=2, columnspan=4, pady=5, sticky="NSEW")
 
         # Bind return key to get_image_path function
         self.root.bind("<Return>", self.get_image_path)
 
+    # Function to select image path
+    def select_image_path(self, *args) -> None:
+        # Select image path
+        image_path = filedialog.askopenfilename(title="Select image", filetypes=[("Image files", "*.png;*.jpg;*.jpeg")])
+
+        # Clear entry field
+        self.path_entry.delete(0, tk.END)
+
+        # Insert image path in entry field 
+        self.path_entry.insert(0, image_path)
+
     # Function to get image path
     def get_image_path(self, *args) -> str:
         # Get image path from user and remove quotes
-        image_path = self.path.get().strip('"')
+        image_path = self.image_path.get().strip('"')
 
         # Check for input
         if not image_path:
             # Output error message
             print("Error: No image path!")
             messagebox.showerror("Error", "No image path", parent=self.root)
+
         # Check for valid path input
         elif not os.path.exists(image_path):
             # Output error message
             print("Error: Path does not exist!")
             messagebox.showerror("Error", "Path does not exist!", parent=self.root)
+
         else:
             # Call sketcher function
             self.sketcher(path=image_path)
@@ -80,20 +94,42 @@ class App:
         # Turn to image to sketch
         sketch_img = cv2.divide(grey_img, invertedblur, scale=256.0)
 
-        # Save the result
-        output_path = "sketch.png"
+        # Ask user for save name
+        output_path = filedialog.asksaveasfilename(title="Save sketch", filetypes=[("Image files", "*.png;")])
+        
+        # print(output_path)
+        # Did user cancel save dialog?
+        if not output_path:
+            return
+
+        # Add extension
+        output_path = output_path + ".png"
+
+        # Get file name
+        _, file_name = os.path.split(output_path)
+
+        # Save file
         cv2.imwrite(output_path, sketch_img)
 
         # Output Confirmation message
-        print(f"Image sketched and saved as {output_path}") 
-        messagebox.showinfo("Done!", f"Image sketched and saved as {output_path}", parent=self.root)
+        print(f"Saved to {output_path} as {file_name}") 
+        messagebox.showinfo("Sketched!", f"Saved to {output_path} as {file_name}", parent=self.root)
  
 def main():
     # Create Tk object
-    root = Tk(screenName="Sketcher")
+    root = tk.Tk()
 
-    # Create App
-    app = App(root)
+    # Give root window a title
+    root.title("Sketcher")
+
+    # Window dimensions
+    root.geometry("450x150")
+
+    # Make window non-resizable
+    root.resizable(False, False)
+
+    # Instantiate App
+    App(root)
 
     # Call mainloop
     root.mainloop()
